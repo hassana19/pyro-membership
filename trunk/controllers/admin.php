@@ -149,7 +149,7 @@ class Admin extends Admin_Controller
 		}
 
 		$this->template
-			->title($this->module_details['name'], lang('galleries.new_member_label'))
+			->title($this->module_details['name'], lang('membership.new_member_label'))
 			->append_metadata( $this->load->view('fragments/wysiwyg', $this->data, TRUE) )
 			->append_metadata( js('codemirror/codemirror.js') )
 			->set('member',		$member)
@@ -157,34 +157,25 @@ class Admin extends Admin_Controller
 	}
 
 	/**
-	 * Manage an existing gallery
+	 * Manage an existing member
 	 *
-	 * @author Yorick Peterse - PyroCMS Dev Team
+	 * @author Darwin
 	 * @access public
-	 * @param int $id The ID of the gallery to manage
+	 * @param int $id The ID of the member to manage
 	 * @return void
 	 */
 	public function manage($id)
 	{
-		$file_folders = $this->file_folders_m->get_folders();
-		$folders_tree = array();
-		foreach($file_folders as $folder)
-		{
-			$indent = repeater('&raquo; ', $folder->depth);
-			$folders_tree[$folder->id] = $indent . $folder->name;
-		}
-		
-		$this->form_validation->set_rules($this->gallery_validation_rules);
+			
+		$this->form_validation->set_rules($this->member_validation_rules);
 
-		// Get the gallery and all images
-		$galleries 		= $this->galleries_m->get_all();
-		$gallery 		= $this->galleries_m->get($id);
-		$gallery_images = $this->gallery_images_m->get_images_by_gallery($id);
+		// Get the member
+		$member	= $this->members_m->get($id);
 
-		if ( empty($gallery) )
+		if ( empty($member) )
 		{
-			$this->session->set_flashdata('error', lang('galleries.exists_error'));
-			redirect('admin/galleries');
+			$this->session->set_flashdata('error', lang('membership.exists_error'));
+			redirect('admin/membership');
 		}
 
 		$this->id = $id;
@@ -193,65 +184,46 @@ class Admin extends Admin_Controller
 		if ($this->form_validation->run() )
 		{
 			// Try to update the gallery
-			if ($this->galleries_m->update($id, $this->input->post()) === TRUE )
+			if ($this->members_m->update($id, $this->input->post()) === TRUE )
 			{
-				$this->session->set_flashdata('success', lang('galleries.update_success'));
+				$this->session->set_flashdata('success', lang('membership.update_success'));
 
 				// Redirect back to the form or main page
 				$this->input->post('btnAction') == 'save_exit'
-					? redirect('admin/galleries')
-					: redirect('admin/galleries/manage/' . $id);
+					? redirect('admin/membership')
+					: redirect('admin/membership/manage/' . $id);
 			}
 			else
 			{
-				$this->session->set_flashdata('error', lang('galleries.update_error'));
-				redirect('admin/galleries/manage/' . $id);
+				$this->session->set_flashdata('error', lang('membership.update_error'));
+				redirect('admin/membership/manage/' . $id);
 			}
 		}
 
 		// Required for validation
-		foreach ($this->gallery_validation_rules as $rule)
+		foreach ($this->member_validation_rules as $rule)
 		{
 			if ($this->input->post($rule['field']))
 			{
-				$gallery->{$rule['field']} = $this->input->post($rule['field']);
+				$member->{$rule['field']} = $this->input->post($rule['field']);
 			}
 		}
 
 		$this->template
-			->title($this->module_details['name'], sprintf(lang('galleries.manage_gallery_label'), $gallery->title))
-			->append_metadata( css('galleries.css', 'galleries') )
-		   	->append_metadata( js('manage.js', 'galleries') )
+			->title($this->module_details['name'], sprintf(lang('membership.manage_member_label'), $member->lastname . ', ' . $member->firstname))
 			->append_metadata( $this->load->view('fragments/wysiwyg', $this->data, TRUE) )
 			->append_metadata( js('codemirror/codemirror.js') )
-			->append_metadata( js('form.js', 'galleries') )
-			->set('gallery',		$gallery)
-			->set('galleries',		$galleries)
-			->set('gallery_images',	$gallery_images)
-			->set('folders_tree',	$folders_tree)
+			->set('member',		$member)
 			->build('admin/form');
 	}
 
-	/**
-	 * Show a gallery preview
-	 * @access	public
-	 * @param	int $id The ID of the gallery
-	 * @return	void
-	 */
-	public function preview($id = 0)
-	{
-		$data->gallery  = $this->galleries_m->get($id);
-
-		$this->template->set_layout('modal', 'admin');
-		$this->template->build('admin/preview', $data);
-	}
 
 	/**
-	 * Delete an existing gallery
+	 * Delete an existing member
 	 *
-	 * @author Yorick Peterse - PyroCMS Dev Team
+	 * @author Darwin
 	 * @access public
-	 * @param int $id The ID of the gallery to delete
+	 * @param int $id The ID of the member to delete
 	 * @return void
 	 */
 	public function delete($id = NULL)
@@ -259,9 +231,9 @@ class Admin extends Admin_Controller
 		$id_array = array();
 
 		// Multiple IDs or just a single one?
-		if ($_POST )
+		if ($this->input->post('action_to') )
 		{
-			$id_array = $_POST['action_to'];
+			$id_array = $this->input->post('action_to');
 		}
 		else
 		{
@@ -273,163 +245,34 @@ class Admin extends Admin_Controller
 
 		if ( empty($id_array) )
 		{
-			$this->session->set_flashdata('error', lang('galleries.id_error'));
-			redirect('admin/galleries');
+			$this->session->set_flashdata('error', lang('membership.id_error'));
+			//redirect('admin/membership');
 		}
 
 		// Loop through each ID
 		foreach ( $id_array as $id)
 		{
-			// Get the gallery
-			$gallery = $this->galleries_m->get($id);
+			// Get the member
+			$member = $this->members_m->get($id);
 
-			// Does the gallery exist?
-			if ( !empty($gallery) )
+			// Does the member exist?
+			if ( !empty($member) )
 			{
 
-				// Delete the gallery along with all the images from the database
-				if ($this->galleries_m->delete($id) AND $this->gallery_images_m->delete_by('gallery_id', $id) )
+				// Delete the member
+				if ($this->members_m->delete($id))
 				{
-					$this->session->set_flashdata('error', sprintf( lang('galleries.folder_error'), $gallery->title));
-					redirect('admin/galleries');
+					//redirect('admin/membership');
 				}
 				else
 				{
-					$this->session->set_flashdata('error', sprintf( lang('galleries.delete_error'), $gallery->title));
-					redirect('admin/galleries');
+					$this->session->set_flashdata('error', sprintf( lang('membership.delete_error'), $member->lastname . ', ' . $member->firstname));
+					redirect('admin/membership');
 				}
 			}
 		}
 
-		$this->session->set_flashdata('success', lang('galleries.delete_success'));
-		redirect('admin/galleries');
-	}
-
-	/**
-	 * Show a gallery image preview
-	 * @access	public
-	 * @param	int $id The ID of the gallery image
-	 * @return	void
-	 */
-	public function image_preview($id = 0)
-	{
-		$data->image  = $this->gallery_images_m->get($id);
-
-		$this->template->set_layout('modal', 'admin');
-		$this->template->build('admin/image/preview', $data);
-	}
-
-	/**
-	 * Sort images in an existing gallery
-	 *
-	 * @author Jerel Unruh - PyroCMS Dev Team
-	 * @access public
-	 */
-	public function ajax_update_order()
-	{
-		$ids = explode(',', $this->input->post('order'));
-
-		$i = 1;
-		foreach ($ids as $id)
-		{
-			$this->gallery_images_m->update($id, array(
-				'order' => $i
-			));
-
-			if ($i === 1)
-			{
-				$preview = $this->gallery_images_m->get($id);
-
-				if ($preview)
-				{
-					$this->db->where('id', $preview->gallery_id);
-					$this->db->update('galleries', array(
-						'preview' => $preview->filename
-					));
-				}
-			}
-			++$i;
-		}
-	}
-
-	/**
-	 * Sort images in an existing gallery
-	 *
-	 * @author Phil Sturgeon - PyroCMS Dev Team
-	 * @access public
-	 */
-	public function ajax_select_folder($folder_id)
-	{
-		$folder = $this->file_folders_m->get($folder_id);
-		
-		if (isset($folder->id))
-		{
-			$folder->images = $this->gallery_images_m->get_images_by_file_folder($folder->id);
-			
-			return $this->template->build_json($folder);
-		}
-
-		echo FALSE;
-	}
-
-	/**
-	 * Callback method that checks the slug of the gallery
-	 * @access public
-	 * @param string title The slug to check
-	 * @return bool
-	 */
-	public function _check_slug($slug = '')
-	{
-		if ( ! $this->galleries_m->check_slug($slug, $this->id))
-		{
-			return TRUE;
-		}
-
-		$this->form_validation->set_message('_check_slug', sprintf(lang('galleries.already_exist_error'), $slug));
-
-		return FALSE;
-	}
-
-	/**
-	 * Callback method that checks the file folder of the gallery
-	 * @access public
-	 * @param int id The id to check if file folder exists or prep to create new folder
-	 * @return bool
-	 */
-	public function _check_folder($id = 0)
-	{
-		// Is not creating or folder exist.. Nothing to do.
-		if ($this->method !== 'create')
-		{
-			return $id;
-		}
-		elseif ($this->file_folders_m->exists($id))
-		{
-			if ($this->galleries_m->count_by('folder_id', $id) > 0)
-			{
-				$this->form_validation->set_message('_check_folder', lang('galleries.folder_duplicated_error'));
-
-				return FALSE;
-			}
-
-			return $id;
-		}
-
-		$folder_name = $this->input->post('title');
-		$folder_slug = url_title(strtolower($folder_name));
-
-		// Check if folder already exist, rename if necessary.
-		$i = 0;
-		$counter = '';
-		while ( ((int) $this->file_folders_m->count_by('slug', $folder_slug . $counter) > 0))
-		{
-			$counter = '-' . ++$i;
-		}
-
-		// Return data to create a new folder to this gallery.
-		return array(
-			'name' => $folder_name . ($i > 0 ? ' (' . $i . ')' : ''),
-			'slug' => $folder_slug . $counter
-		);
+		$this->session->set_flashdata('success', lang('membership.delete_success'));
+		redirect('admin/membership');
 	}
 }

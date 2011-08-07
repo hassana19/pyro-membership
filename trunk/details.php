@@ -21,8 +21,8 @@ class Module_Membership extends Module {
 
 	public function install()
 	{
-		$this->dbforge->drop_table('bzmembers');
-		$sql = "CREATE  TABLE ". $this->db->dbprefix('bzmembers'). " (
+		$this->dbforge->drop_table('members');
+		$sql = "CREATE  TABLE ". $this->db->dbprefix('members'). " (
 					`id` INT NOT NULL AUTO_INCREMENT ,
 					`firstname` VARCHAR(255) NULL ,
 					`middlename` VARCHAR(255) NULL ,
@@ -43,7 +43,7 @@ class Module_Membership extends Module {
 
 	public function uninstall()
 	{
-		if($this->dbforge->drop_table('bzmembers'))
+		if($this->dbforge->drop_table('members'))
 			return TRUE;
 	}//uninstall
 

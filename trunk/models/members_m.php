@@ -52,7 +52,7 @@ class Members_m extends MY_Model {
 			'email'	=> $input['email'],
 			'birthdate'			=> $input['birthdate'],
 			'gender'		=> $input['gender'],
-			'civilstatus'				=> $input['civilstatus'],
+			'civil_status'				=> $input['civilstatus'],
 			'country'				=> $input['country'],
 			'timezone'				=> $input['timezone']
 		));
@@ -77,7 +77,7 @@ class Members_m extends MY_Model {
 			'email'	=> $input['email'],
 			'birthdate'			=> $input['birthdate'],
 			'gender'		=> $input['gender'],
-			'civilstatus'				=> $input['civilstatus'],
+			'civil_status'				=> $input['civilstatus'],
 			'country'				=> $input['country'],
 			'timezone'				=> $input['timezone']
 		));
